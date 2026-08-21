@@ -151,6 +151,8 @@ export const LayerKindSchema = z.enum([
   'video',
   'lottie',
   'svg',
+  'cursor',
+  'browser',
 ]);
 export type LayerKind = z.infer<typeof LayerKindSchema>;
 
@@ -267,6 +269,23 @@ export const LayerSchema = z.object({
       assetId: z.string().nullable().default(null),
       src: z.string().default(''),
       svgContent: z.string().default(''),
+    })
+    .optional(),
+
+  cursor: z
+    .object({
+      cursorStyle: z.enum(['default', 'pointer', 'text', 'grab']).default('default'),
+      clickAnimation: z.boolean().default(false),
+      targetX: z.number().optional(),
+      targetY: z.number().optional(),
+    })
+    .optional(),
+
+  browser: z
+    .object({
+      urlBarText: z.string().default('example.com'),
+      theme: z.enum(['light', 'dark']).default('light'),
+      contentHeight: z.number().optional(), // For scrolling effects
     })
     .optional(),
 });

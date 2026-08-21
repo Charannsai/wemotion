@@ -11,6 +11,14 @@ export const TextRenderer = memo(function TextRenderer({ layer, state }: BaseRen
   if (layer.kind !== 'text' || !layer.text) return null;
 
   const { content, style } = layer.text;
+  
+  // Handle typewriter effect if textProgress is animated
+  let displayContent = content;
+  if (typeof state.animated?.['textProgress'] === 'number') {
+    const progress = Math.min(1, Math.max(0, state.animated['textProgress']));
+    const charsToShow = Math.round(content.length * progress);
+    displayContent = content.slice(0, charsToShow);
+  }
 
   // Layer-specific animated overrides could go here if text styles were animatable.
   // For now, we take from the base style.
@@ -36,7 +44,7 @@ export const TextRenderer = memo(function TextRenderer({ layer, state }: BaseRen
   return (
     <div style={cssStyle}>
       {/* We split by newlines if content has them, though standard CSS handles it if whitespace is pre-wrap */}
-      <span style={{ whiteSpace: 'pre-wrap' }}>{content}</span>
+      <span style={{ whiteSpace: 'pre-wrap' }}>{displayContent}</span>
     </div>
   );
 });

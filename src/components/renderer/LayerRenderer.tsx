@@ -7,6 +7,8 @@ import { TextRenderer } from './layers/TextRenderer';
 import { ImageRenderer } from './layers/ImageRenderer';
 import { ShapeRenderer } from './layers/ShapeRenderer';
 import { VideoRenderer } from './layers/VideoRenderer';
+import { CursorRenderer } from './layers/CursorRenderer';
+import { BrowserRenderer } from './layers/BrowserRenderer';
 // We omit lottie, screenshot, svg for now, they follow the exact same pattern.
 
 export interface LayerRendererProps {
@@ -31,6 +33,10 @@ export const LayerRenderer = memo(function LayerRenderer({ layer, state, childre
         return <ShapeRenderer layer={layer} state={state} />;
       case 'video':
         return <VideoRenderer layer={layer} state={state} />;
+      case 'cursor':
+        return <CursorRenderer layer={layer} state={state} />;
+      case 'browser':
+        return <BrowserRenderer layer={layer} state={state} />;
       case 'group':
         return children;
       default:

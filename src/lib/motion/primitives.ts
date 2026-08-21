@@ -204,6 +204,89 @@ registerPrimitive('blurIn', (desc, isExit) => {
   ];
 });
 
+// Spring Pop
+registerPrimitive('springPop', (desc, isExit) => {
+  const dur = desc.durationFrames;
+  return [
+    {
+      property: 'transform.scaleX',
+      keyframes: isExit
+        ? [{ frame: 0, value: 1, easing: 'easeIn' }, { frame: dur, value: 0.8, easing: 'easeIn' }]
+        : [{ frame: 0, value: 0.8, easing: 'overshoot' }, { frame: dur, value: 1, easing: 'overshoot' }],
+    },
+    {
+      property: 'transform.scaleY',
+      keyframes: isExit
+        ? [{ frame: 0, value: 1, easing: 'easeIn' }, { frame: dur, value: 0.8, easing: 'easeIn' }]
+        : [{ frame: 0, value: 0.8, easing: 'overshoot' }, { frame: dur, value: 1, easing: 'overshoot' }],
+    },
+    {
+      property: 'transform.y',
+      keyframes: isExit
+        ? [{ frame: 0, value: 0, easing: 'easeIn' }, { frame: dur, value: 12, easing: 'easeIn' }]
+        : [{ frame: 0, value: 12, easing: 'overshoot' }, { frame: dur, value: 0, easing: 'overshoot' }],
+    },
+    {
+      property: 'opacity',
+      keyframes: isExit
+        ? [{ frame: 0, value: 1, easing: 'easeIn' }, { frame: dur, value: 0, easing: 'easeIn' }]
+        : [{ frame: 0, value: 0, easing: 'easeOut' }, { frame: Math.round(dur * 0.3), value: 1, easing: 'easeOut' }],
+    },
+  ];
+});
+
+// Cursor Click (simulates a quick press)
+registerPrimitive('cursorClick', (desc, isExit) => {
+  const dur = desc.durationFrames; // Should be short, e.g. 10 frames
+  if (isExit) return []; // Clicks are usually discrete events, not exits
+  
+  const downFrame = Math.max(2, Math.round(dur * 0.3));
+  return [
+    {
+      property: 'transform.scaleX',
+      keyframes: [
+        { frame: 0, value: 1, easing: 'easeOut' },
+        { frame: downFrame, value: 0.85, easing: 'easeIn' },
+        { frame: dur, value: 1, easing: 'overshoot' }
+      ],
+    },
+    {
+      property: 'transform.scaleY',
+      keyframes: [
+        { frame: 0, value: 1, easing: 'easeOut' },
+        { frame: downFrame, value: 0.85, easing: 'easeIn' },
+        { frame: dur, value: 1, easing: 'overshoot' }
+      ],
+    },
+  ];
+});
+
+// Typewriter
+registerPrimitive('typewriterIn', (desc, isExit) => {
+  const dur = desc.durationFrames;
+  if (isExit) {
+    return [
+      {
+        property: 'opacity',
+        keyframes: [
+          { frame: 0, value: 1, easing: 'linear' },
+          { frame: dur, value: 0, easing: 'linear' }
+        ]
+      }
+    ];
+  }
+  
+  return [
+    {
+      property: 'textProgress', // Handled specially by TextRenderer
+      keyframes: [
+        { frame: 0, value: 0, easing: 'linear' },
+        { frame: dur, value: 1, easing: 'linear' }
+      ]
+    }
+  ];
+});
+
 // None (no motion)
 registerPrimitive('none', () => []);
 
