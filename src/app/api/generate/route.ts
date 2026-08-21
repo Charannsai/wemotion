@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
 import { generateDocumentPlan } from '@/lib/ai/executor';
 import { generateDeterministicPlan } from '@/lib/ai/deterministic';
+import { mapAiPlanToDocument } from '@/lib/ai/mapper';
 import { config } from '@/lib/config';
 import { db } from '@/lib/db/client';
 
@@ -32,7 +33,8 @@ export async function POST(req: Request) {
       documentPlan = generateDeterministicPlan(brief, targetFormat);
     }
 
-    const docJson = JSON.stringify(documentPlan);
+    const finalDocument = mapAiPlanToDocument(documentPlan);
+    const docJson = JSON.stringify(finalDocument);
 
     // Save generated plan as the new state for the project
     await db.projectDocument.upsert({
@@ -50,7 +52,7 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, plan: documentPlan });
+    return NextResponse.json({ success: true, plan: finalDocument });
   } catch (error: any) {
     console.error('[API/Generate] Error:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });

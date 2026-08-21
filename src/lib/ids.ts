@@ -12,7 +12,7 @@
  *   * 80 bits of CSPRNG randomness -> collision-free without coordination.
  *   * Crockford base32 -> case-insensitive, no ambiguous characters, URL-safe.
  */
-import { randomBytes, randomUUID } from 'node:crypto';
+
 
 const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford base32
 const TIME_CHARS = 10;
@@ -75,8 +75,8 @@ function encodeTime(now: number): string {
 }
 
 function encodeRandom(): string {
-  // 16 base32 chars need 80 bits; draw 10 bytes and map 5-bit groups.
-  const bytes = randomBytes(10);
+  const bytes = new Uint8Array(10);
+  crypto.getRandomValues(bytes);
   let bits = 0n;
   for (const byte of bytes) bits = (bits << 8n) | BigInt(byte);
   let out = '';
@@ -116,12 +116,18 @@ export function isValidId(id: unknown, prefix?: IdPrefix): boolean {
 
 /** Opaque high-entropy token for share links, API keys and session cookies. */
 export function newToken(bytes = 32): string {
-  return randomBytes(bytes).toString('base64url');
+  const buf = new Uint8Array(bytes);
+  crypto.getRandomValues(buf);
+  let str = '';
+  for (let i = 0; i < buf.length; i++) {
+    str += String.fromCharCode(buf[i]);
+  }
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
 /** UUID for interop where an external system requires one (e.g. render worker locks). */
 export function newUuid(): string {
-  return randomUUID();
+  return crypto.randomUUID();
 }
 
 /**

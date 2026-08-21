@@ -5,7 +5,7 @@
  * identical documents must always produce the same hash regardless of
  * property insertion order in the JSON.
  */
-import { createHash } from 'node:crypto';
+
 import type { Document } from './schema';
 
 /**
@@ -26,12 +26,14 @@ export function canonicalJson(value: unknown): string {
 }
 
 /** SHA-256 hex digest of the canonical JSON representation of a document. */
-export function hashDocument(doc: Document): string {
+export async function hashDocument(doc: Document): Promise<string> {
   const canonical = canonicalJson(doc);
-  return createHash('sha256').update(canonical, 'utf-8').digest('hex');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /** Byte size of the canonical JSON representation. */
 export function documentBytes(doc: Document): number {
-  return Buffer.byteLength(canonicalJson(doc), 'utf-8');
+  return new TextEncoder().encode(canonicalJson(doc)).length;
 }

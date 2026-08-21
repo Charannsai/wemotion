@@ -82,7 +82,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     history: createHistory(doc),
     selectedSceneId: doc.scenes[0]?.id || null,
     selectedLayerIds: [],
-    currentFrame: 0,
+    currentFrame: 30,
     isPlaying: false,
   })
 }));
