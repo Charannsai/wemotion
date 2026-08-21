@@ -1,0 +1,930 @@
+// WeMotion — canonical persistence schema.
+//
+// PORTABILITY CONTRACT
+// -------------------
+// This schema is written so that a single file works on both SQLite (zero-setup
+// local development) and PostgreSQL (production, per PRD §19). To achieve that:
+//
+//   * No native `enum` types      — SQLite has none. String columns are narrowed
+//                                   by TypeScript unions + Zod at the app edge
+//                                   (see src/lib/db/enums.ts).
+//   * No `Json` columns           — SQLite has none. JSON documents are stored as
+//                                   serialized `String` and (de)serialized in the
+//                                   repository layer, which keeps the exact same
+//                                   bytes on both providers.
+//   * No scalar list columns      — SQLite has none. Lists are serialized JSON or
+//                                   normalized into child tables.
+//   * No provider-specific attrs  — nothing that only one of the two understands.
+//
+// Switch providers with `npm run db:provider postgresql` (rewrites the line
+// below), then `npm run db:push`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================================================
+// Identity, workspaces, access control
+// ===========================================================================
+
+model User {
+  id            String    @id
+  email         String    @unique
+  emailNormal   String    @unique
+  name          String
+  passwordHash  String
+  avatarColor   String    @default("#111111")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastSeenAt    DateTime?
+
+  // "system" | "light" | "dark" — the app is white-first; dark is opt-in.
+  themePref     String    @default("light")
+
+  sessions      Session[]
+  memberships   WorkspaceMember[]
+  ownedProjects Project[]         @relation("ProjectOwner")
+  operations    Operation[]
+  comments      Comment[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+  apiKeys       ApiKey[]
+  renderJobs    RenderJob[]
+  aiTx          AiTransaction[]
+  uploads       Asset[]           @relation("AssetUploader")
+  shareLinks    ShareLink[]
+
+  @@index([emailNormal])
+}
+
+model Session {
+  id           String   @id
+  userId       String
+  // SHA-256 of the session token; the raw token only ever lives in the cookie.
+  tokenHash    String   @unique
+  userAgent    String   @default("")
+  ipHash       String   @default("")
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Workspace {
+  id           String   @id
+  name         String
+  slug         String   @unique
+  // "free" | "creator" | "pro" | "team" | "business"
+  plan         String   @default("creator")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Privacy / retention settings (PRD §23). Serialized WorkspaceSettings.
+  settingsJson String   @default("{}")
+
+  members      WorkspaceMember[]
+  projects     Project[]
+  assets       Asset[]
+  brandSystems BrandSystem[]
+  templates    Template[]
+  folders      Folder[]
+  meterEvents  MeterEvent[]
+  usageEvents  UsageEvent[]
+  auditLogs    AuditLog[]
+
+  @@index([slug])
+}
+
+model WorkspaceMember {
+  id          String   @id
+  workspaceId String
+  userId      String
+  // "owner" | "admin" | "editor" | "reviewer" | "viewer"
+  role        String   @default("editor")
+  createdAt   DateTime @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model ApiKey {
+  id          String    @id
+  userId      String
+  workspaceId String
+  name        String
+  prefix      String
+  keyHash     String    @unique
+  scopesJson  String    @default("[]")
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+// ===========================================================================
+// Projects & the versioned document
+// ===========================================================================
+
+model Folder {
+  id          String   @id
+  workspaceId String
+  name        String
+  parentId    String?
+  createdAt   DateTime @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent      Folder?   @relation("FolderTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Folder[]  @relation("FolderTree")
+  projects    Project[]
+
+  @@index([workspaceId])
+}
+
+model Project {
+  id            String   @id
+  workspaceId   String
+  ownerId       String
+  folderId      String?
+  name          String
+  description   String   @default("")
+
+  // "draft" | "ingesting" | "planning" | "ready" | "in_review" | "approved" | "exported" | "archived"
+  status        String   @default("draft")
+  // "draft" | "in_review" | "approved" | "exported"
+  reviewState   String   @default("draft")
+
+  archivedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastOpenedAt  DateTime?
+
+  // Denormalized canvas summary for fast dashboard rendering.
+  canvasWidth   Int      @default(1920)
+  canvasHeight  Int      @default(1080)
+  fps           Int      @default(30)
+  durationMs    Int      @default(0)
+  sceneCount    Int      @default(0)
+
+  sourceUrl     String?
+  brandSystemId String?
+  thumbnailKey  String?
+
+  // Monotonic document revision. Every applied operation batch bumps this.
+  revision      Int      @default(0)
+
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner         User            @relation("ProjectOwner", fields: [ownerId], references: [id])
+  folder        Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  brandSystem   BrandSystem?    @relation(fields: [brandSystemId], references: [id], onDelete: SetNull)
+
+  document      ProjectDocument?
+  versions      ProjectVersion[]
+  operations    Operation[]
+  aiTx          AiTransaction[]
+  sources       Source[]
+  assets        Asset[]
+  knowledge     Knowledge?
+  claims        Claim[]
+  briefs        CreativeBrief[]
+  treatments    Treatment[]
+  renderJobs    RenderJob[]
+  qaReports     QaReport[]
+  comments      Comment[]
+  shareLinks    ShareLink[]
+  captures      CaptureSession[]
+  jobs          Job[]
+
+  @@index([workspaceId, updatedAt])
+  @@index([ownerId])
+  @@index([folderId])
+  @@index([status])
+}
+
+/// The live, canonical scene graph. Exactly one row per project; overwritten in
+/// place on autosave and snapshotted into ProjectVersion at checkpoints.
+model ProjectDocument {
+  projectId   String   @id
+  revision    Int      @default(0)
+  // Serialized ProjectDocument (src/lib/scene-graph/schema.ts)
+  docJson     String
+  // Byte size + hash let us detect no-op saves and verify render determinism.
+  docHash     String
+  docBytes    Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectVersion {
+  id           String   @id
+  projectId    String
+  revision     Int
+  label        String   @default("")
+  // "autosave" | "checkpoint" | "pre_ai" | "post_ai" | "pre_render" | "restore"
+  kind         String   @default("checkpoint")
+  docJson      String
+  docHash      String
+  createdAt    DateTime @default(now())
+  createdById  String?
+  // Set when this version was produced by an AI transaction.
+  aiTxId       String?
+  notes        String   @default("")
+
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  renderJobs   RenderJob[]
+
+  @@unique([projectId, revision])
+  @@index([projectId, createdAt])
+}
+
+/// Append-only log of every validated scene-graph operation, with its computed
+/// inverse. This is the substrate for undo/redo, AI-transaction rollback,
+/// change attribution and the audit trail (PRD §13, §22).
+model Operation {
+  id           String   @id
+  projectId    String
+  seq          Int
+  // "manual" | "ai" | "template" | "qa_fix" | "system" | "restore"
+  origin       String   @default("manual")
+  // Operation discriminator, e.g. "addLayer" | "updateProperty" | ...
+  kind         String
+  // Serialized operation payload and its inverse.
+  payloadJson  String
+  inverseJson  String
+  // Batches group operations that must undo/redo atomically.
+  batchId      String
+  batchLabel   String   @default("")
+  aiTxId       String?
+  userId       String?
+  createdAt    DateTime @default(now())
+  // Set when the operation has been rolled back; kept for the audit trail.
+  undoneAt     DateTime?
+
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user         User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  aiTx         AiTransaction? @relation(fields: [aiTxId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, seq])
+  @@index([projectId, batchId])
+  @@index([aiTxId])
+}
+
+/// A bounded AI edit, represented as a discrete reversible change set (PRD §12).
+model AiTransaction {
+  id            String   @id
+  projectId     String
+  userId        String?
+  // "treatment" | "scenes" | "edit" | "qa_fix" | "duration" | "aspect" | "copy"
+  intent        String
+  request       String
+  // Serialized: agent, model, prompt hash, token usage, tool calls, sources used
+  metaJson      String   @default("{}")
+  // Serialized ProposedChange[] — human-readable diff shown in the approval card
+  diffJson      String   @default("[]")
+  // Serialized Operation[] awaiting apply (populated while status = proposed)
+  planJson      String   @default("[]")
+  // "proposed" | "applied" | "rejected" | "reverted" | "failed"
+  status        String   @default("proposed")
+  requiresApproval Boolean @default(false)
+  error         String?
+  model         String   @default("")
+  inputTokens   Int      @default(0)
+  outputTokens  Int      @default(0)
+  latencyMs     Int      @default(0)
+  batchId       String?
+  createdAt     DateTime @default(now())
+  appliedAt     DateTime?
+  revertedAt    DateTime?
+
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  operations    Operation[]
+
+  @@index([projectId, createdAt])
+}
+
+// ===========================================================================
+// Ingestion, knowledge, provenance
+// ===========================================================================
+
+model Source {
+  id            String   @id
+  projectId     String
+  // "url" | "file" | "manual" | "capture"
+  kind          String
+  url           String?
+  canonicalUrl  String?
+  filename      String?
+  mimeType      String?
+  byteSize      Int      @default(0)
+  contentHash   String?
+
+  title         String   @default("")
+  // "home" | "product" | "features" | "pricing" | "docs" | "integrations" |
+  // "use_case" | "about" | "changelog" | "blog" | "demo" | "legal" | "other"
+  purpose       String   @default("other")
+  // Depth in the crawl tree; 0 for the root URL and for uploads.
+  depth         Int      @default(0)
+  parentSourceId String?
+
+  // "pending" | "fetching" | "parsed" | "failed" | "skipped" | "excluded"
+  status        String   @default("pending")
+  error         String?
+
+  // Cleaned markdown/text, boilerplate-stripped.
+  contentText   String   @default("")
+  contentBytes  Int      @default(0)
+  // Serialized: { html?, links[], images[], metadata, sections[], structured }
+  extractJson   String   @default("{}")
+  // Rendering profile detected for this page: "static" | "client" | "auth" | "interactive"
+  renderProfile String   @default("static")
+
+  includedInPlan Boolean @default(true)
+  fetchedAt     DateTime?
+  createdAt     DateTime @default(now())
+  // Which ingestion driver produced this row: "firecrawl" | "native" | "upload"
+  driver        String   @default("native")
+
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assets        Asset[]
+  chunks        KnowledgeChunk[]
+  evidence      Evidence[]
+
+  @@unique([projectId, contentHash])
+  @@index([projectId, status])
+  @@index([projectId, purpose])
+}
+
+model Asset {
+  id            String   @id
+  workspaceId   String
+  projectId     String?
+  sourceId      String?
+  uploadedById  String?
+
+  name          String
+  // "image" | "svg" | "screenshot" | "video" | "audio" | "font" | "document" | "lottie"
+  kind          String
+  // Semantic role (PRD §5): "logo" | "icon" | "screenshot" | "hero" | "product_ui"
+  // | "decorative" | "background" | "document" | "audio" | "video" | "unknown"
+  visualRole    String   @default("unknown")
+  roleLockedByUser Boolean @default(false)
+  roleConfidence Float   @default(0)
+
+  mimeType      String
+  byteSize      Int      @default(0)
+  width         Int?
+  height        Int?
+  durationMs    Int?
+  // Storage keys — never public URLs. Signed on demand.
+  storageKey    String
+  thumbnailKey  String?
+  proxyKey      String?
+  // Sharp-derived dominant palette, serialized string[]
+  paletteJson   String   @default("[]")
+  // sha256 of original bytes + 64-bit perceptual hash for near-duplicate detection
+  contentHash   String
+  perceptualHash String?
+  // True when produced by a generative model rather than taken from the product.
+  isSynthetic   Boolean  @default(false)
+  // Serialized provenance record: origin, sourceUrl, extractedAt, license note
+  provenanceJson String  @default("{}")
+  tagsJson      String   @default("[]")
+  pinnedToBrand Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project       Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  source        Source?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  uploadedBy    User?     @relation("AssetUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  variants      AssetVariant[]
+  captureStates CaptureState[]
+
+  @@index([workspaceId, kind])
+  @@index([projectId])
+  @@index([contentHash])
+  @@index([perceptualHash])
+}
+
+model AssetVariant {
+  id         String   @id
+  assetId    String
+  // "thumbnail" | "proxy" | "crop" | "resize" | "poster" | "waveform"
+  kind       String
+  storageKey String
+  width      Int?
+  height     Int?
+  byteSize   Int      @default(0)
+  paramsJson String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, kind])
+}
+
+/// The structured product model (PRD §6). One per project, rebuilt by the
+/// knowledge service; never handed to an agent as raw crawl output.
+model Knowledge {
+  projectId     String   @id
+  // Serialized ProductKnowledge
+  modelJson     String
+  // Aggregate confidence 0..1 and per-section coverage, serialized.
+  statsJson     String   @default("{}")
+  builtAt       DateTime @default(now())
+  revision      Int      @default(1)
+
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+/// Retrievable text units with embeddings. On Postgres these back a pgvector
+/// index; on SQLite the vectors are Float32 blobs scanned in-process.
+model KnowledgeChunk {
+  id          String   @id
+  projectId   String
+  sourceId    String?
+  ordinal     Int      @default(0)
+  heading     String   @default("")
+  text        String
+  tokenCount  Int      @default(0)
+  // "page" | "file" | "feature" | "claim" | "terminology" | "capture"
+  facet       String   @default("page")
+  // Float32Array bytes; null until the embedding pass runs.
+  embedding   Bytes?
+  embeddingDim Int     @default(0)
+  // Lexical index support: serialized term-frequency map for BM25 scoring.
+  termsJson   String   @default("{}")
+  createdAt   DateTime @default(now())
+
+  source      Source?  @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, facet])
+  @@index([sourceId])
+}
+
+/// A factual product statement the video may assert. Claims without evidence
+/// cannot enter copy or narration without explicit user approval (PRD §12).
+model Claim {
+  id          String   @id
+  projectId   String
+  text        String
+  normalized  String
+  // "feature" | "metric" | "integration" | "pricing" | "security" | "customer"
+  // | "positioning" | "other"
+  category    String   @default("other")
+  // "verified" | "inferred" | "user_provided" | "unsupported" | "conflicting"
+  status      String   @default("inferred")
+  confidence  Float    @default(0)
+  approvedByUser Boolean @default(false)
+  conflictNote String  @default("")
+  createdAt   DateTime @default(now())
+
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  evidence    Evidence[]
+
+  @@index([projectId, status])
+}
+
+model Evidence {
+  id         String   @id
+  claimId    String
+  sourceId   String?
+  // Verbatim supporting excerpt.
+  quote      String
+  locator    String   @default("")
+  sourceUrl  String   @default("")
+  extractedAt DateTime @default(now())
+
+  claim      Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  source     Source?  @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([claimId])
+}
+
+// ===========================================================================
+// Creative layer
+// ===========================================================================
+
+model CreativeBrief {
+  id            String   @id
+  projectId     String
+  // "product_launch" | "feature_announcement" | "product_demo" | "saas_explainer"
+  // | "founder_announcement" | "release_notes" | "customer_story" | "teaser"
+  // | "pricing_overview" | "technical_workflow"
+  category      String   @default("product_launch")
+  goal          String   @default("")
+  audience      String   @default("")
+  keyMessage    String   @default("")
+  tone          String   @default("confident")
+  styleId       String   @default("precision")
+  targetDurationMs Int   @default(30000)
+  aspectRatio   String   @default("16:9")
+  ctaText       String   @default("")
+  ctaUrl        String   @default("")
+  // Serialized string[]
+  emphasisJson  String   @default("[]")
+  exclusionsJson String  @default("[]")
+  // "none" | "captions" | "voiceover" | "both"
+  narration     String   @default("captions")
+  musicPreference String @default("none")
+  extraInstructions String @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  treatments    Treatment[]
+
+  @@index([projectId])
+}
+
+/// Structured creative treatment: story arc, scene objectives, copy, assets,
+/// timing and motion intent — validated before it ever becomes a scene graph.
+model Treatment {
+  id           String   @id
+  projectId    String
+  briefId      String?
+  version      Int      @default(1)
+  // Serialized CreativeTreatment
+  treatmentJson String
+  // Serialized ValidationReport from the constraint validator (PRD §4 step 7)
+  validationJson String  @default("{}")
+  // "draft" | "validated" | "rejected" | "built"
+  status       String   @default("draft")
+  // "ai" | "deterministic" | "manual" | "template"
+  producedBy   String   @default("deterministic")
+  model        String   @default("")
+  createdAt    DateTime @default(now())
+
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  brief        CreativeBrief? @relation(fields: [briefId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, version])
+}
+
+model BrandSystem {
+  id           String   @id
+  workspaceId  String
+  name         String
+  // Serialized BrandSystem tokens: colors, type, spacing, geometry, motion
+  tokensJson   String
+  // "extracted" | "user" | "system"
+  origin       String   @default("user")
+  // Extraction provenance + per-token confidence, serialized.
+  provenanceJson String @default("{}")
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projects     Project[]
+
+  @@index([workspaceId])
+}
+
+/// Parameterized scene graph with declared slots (PRD §18) — not a static video.
+model Template {
+  id            String   @id
+  workspaceId   String?
+  name          String
+  slug          String   @unique
+  description   String   @default("")
+  // "scene" | "video"
+  scope         String   @default("scene")
+  category      String   @default("other")
+  // Serialized TemplateDefinition
+  definitionJson String
+  // Serialized string[] of "16:9" | "1:1" | "9:16" | "4:5"
+  formatsJson   String   @default("[\"16:9\"]")
+  minDurationMs Int      @default(1500)
+  maxDurationMs Int      @default(12000)
+  previewKey    String?
+  // System templates ship with the platform and are read-only.
+  isSystem      Boolean  @default(false)
+  // Templates must pass visual QA before being listed (PRD §18).
+  qaPassed      Boolean  @default(false)
+  qaJson        String   @default("{}")
+  usageCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([scope, category])
+}
+
+// ===========================================================================
+// Capture engine (PRD §16)
+// ===========================================================================
+
+model CaptureSession {
+  id           String   @id
+  projectId    String
+  url          String
+  // "screenshot" | "browser_state" | "dom_aware" | "manual"
+  mode         String   @default("screenshot")
+  // "queued" | "running" | "completed" | "failed" | "cancelled"
+  status       String   @default("queued")
+  error        String?
+  viewportW    Int      @default(1440)
+  viewportH    Int      @default(900)
+  deviceScale  Float    @default(2)
+  // Serialized InteractionPlan actually executed
+  planJson     String   @default("{}")
+  // Serialized candidate interaction targets discovered in the page
+  targetsJson  String   @default("[]")
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime @default(now())
+
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  states       CaptureState[]
+
+  @@index([projectId, status])
+}
+
+model CaptureState {
+  id           String   @id
+  sessionId    String
+  assetId      String?
+  ordinal      Int
+  label        String   @default("")
+  // The action that produced this state: "initial" | "click" | "hover" | "type"
+  // | "scroll" | "key" | "navigate" | "wait"
+  action       String   @default("initial")
+  selector     String   @default("")
+  actionValue  String   @default("")
+  pageUrl      String   @default("")
+  // Serialized: bounding boxes of semantic regions + the interaction target rect
+  regionsJson  String   @default("[]")
+  createdAt    DateTime @default(now())
+
+  session      CaptureSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  asset        Asset?         @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, ordinal])
+}
+
+// ===========================================================================
+// QA, rendering, exports
+// ===========================================================================
+
+model QaReport {
+  id           String   @id
+  projectId    String
+  revision     Int
+  // "structural" | "visual" | "content" | "export" | "full"
+  scope        String   @default("full")
+  // "pass" | "warn" | "fail"
+  verdict      String   @default("pass")
+  score        Int      @default(100)
+  errorCount   Int      @default(0)
+  warnCount    Int      @default(0)
+  // Serialized QaFinding[]
+  findingsJson String   @default("[]")
+  // Serialized bounded corrective Operation[] the QA agent can apply
+  fixesJson    String   @default("[]")
+  durationMs   Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+}
+
+model RenderJob {
+  id            String   @id
+  projectId     String
+  versionId     String?
+  requestedById String?
+  // Serialized RenderPreset: container, codec, resolution, fps, crf, audio, captions
+  presetJson    String
+  label         String   @default("")
+  // "queued" | "preparing" | "rendering" | "encoding" | "verifying" | "completed"
+  // | "failed" | "cancelled"
+  status        String   @default("queued")
+  progress      Float    @default(0)
+  stage         String   @default("queued")
+  framesTotal   Int      @default(0)
+  framesDone    Int      @default(0)
+  error         String?
+  attempt       Int      @default(1)
+  // Hash of (docHash + preset) — identical inputs must yield identical output.
+  determinismKey String  @default("")
+  driver        String   @default("chromium")
+  queuedAt      DateTime @default(now())
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  durationMs    Int      @default(0)
+
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version       ProjectVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  requestedBy   User?           @relation(fields: [requestedById], references: [id], onDelete: SetNull)
+  outputs       RenderOutput[]
+
+  @@index([projectId, queuedAt])
+  @@index([status])
+}
+
+model RenderOutput {
+  id           String   @id
+  jobId        String
+  // "mp4" | "webm" | "gif" | "png_sequence" | "mov" | "srt" | "vtt" | "thumbnail"
+  kind         String
+  storageKey   String
+  mimeType     String
+  byteSize     Int      @default(0)
+  width        Int      @default(0)
+  height       Int      @default(0)
+  fps          Int      @default(30)
+  durationMs   Int      @default(0)
+  // ffprobe verification result, serialized (PRD §25 technical export checks)
+  probeJson    String   @default("{}")
+  checksum     String   @default("")
+  createdAt    DateTime @default(now())
+
+  job          RenderJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+// ===========================================================================
+// Collaboration
+// ===========================================================================
+
+model Comment {
+  id          String   @id
+  projectId   String
+  userId      String
+  // Anchors the comment to a scene, a layer, or a timeline moment.
+  sceneId     String?
+  layerId     String?
+  timeMs      Int?
+  body        String
+  resolvedAt  DateTime?
+  parentId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent      Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentThread")
+
+  @@index([projectId, createdAt])
+}
+
+model ShareLink {
+  id          String   @id
+  projectId   String
+  createdById String
+  token       String   @unique
+  // "view" | "comment"
+  access      String   @default("view")
+  passwordHash String?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+// ===========================================================================
+// Infrastructure: durable queue, metering, analytics, audit
+// ===========================================================================
+
+/// Durable job queue. With QUEUE_DRIVER=db this table *is* the queue: workers
+/// claim rows atomically by compare-and-set on (status, lockToken).
+model Job {
+  id           String   @id
+  // "ingest.url" | "ingest.file" | "knowledge.build" | "capture.run"
+  // | "treatment.generate" | "scenes.generate" | "ai.edit" | "qa.run"
+  // | "render.run" | "asset.derive" | "thumbnail.project"
+  kind         String
+  queue        String   @default("default")
+  projectId    String?
+  workspaceId  String?
+  payloadJson  String   @default("{}")
+  // "queued" | "claimed" | "running" | "completed" | "failed" | "cancelled" | "dead"
+  status       String   @default("queued")
+  priority     Int      @default(0)
+  progress     Float    @default(0)
+  stage        String   @default("")
+  attempt      Int      @default(0)
+  maxAttempts  Int      @default(3)
+  lockToken    String?
+  lockedUntil  DateTime?
+  runAt        DateTime @default(now())
+  resultJson   String   @default("{}")
+  error        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  startedAt    DateTime?
+  finishedAt   DateTime?
+
+  project      Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([status, queue, runAt])
+  @@index([projectId, kind])
+  @@index([lockedUntil])
+}
+
+/// Billable units (PRD §27). Written by the services that incur the cost.
+model MeterEvent {
+  id          String   @id
+  workspaceId String
+  projectId   String?
+  // "crawl_page" | "parsed_page" | "ai_operation" | "rendered_second"
+  // | "storage_byte" | "browser_session" | "ai_input_token" | "ai_output_token"
+  meter       String
+  quantity    Float    @default(0)
+  unit        String   @default("count")
+  // Free-form dimension for attribution, serialized.
+  metaJson    String   @default("{}")
+  occurredAt  DateTime @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, meter, occurredAt])
+}
+
+/// Product analytics (PRD §26) — workflow events, not vanity engagement.
+model UsageEvent {
+  id          String   @id
+  workspaceId String
+  projectId   String?
+  userId      String?
+  name        String
+  propsJson   String   @default("{}")
+  occurredAt  DateTime @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, name, occurredAt])
+  @@index([projectId, name])
+}
+
+model Notification {
+  id          String   @id
+  userId      String
+  // "render_completed" | "render_failed" | "ingest_completed" | "ingest_failed"
+  // | "qa_failed" | "comment_added" | "approval_requested" | "system"
+  kind        String
+  title       String
+  body        String   @default("")
+  href        String   @default("")
+  // "info" | "success" | "warning" | "error"
+  level       String   @default("info")
+  projectId   String?
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}
+
+model AuditLog {
+  id          String   @id
+  workspaceId String
+  userId      String?
+  action      String
+  targetType  String   @default("")
+  targetId    String   @default("")
+  metaJson    String   @default("{}")
+  ipHash      String   @default("")
+  createdAt   DateTime @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+}
+
+/// Token-bucket rate limiting for ingestion/render/AI endpoints (PRD §23).
+model RateLimit {
+  key        String   @id
+  tokens     Float    @default(0)
+  updatedAt  DateTime @default(now())
+  windowEnd  DateTime @default(now())
+}

@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(git --version)",
+      "Bash(ffmpeg -version)",
+      "Bash(psql --version)",
+      "Bash(redis-cli --version)",
+      "Bash(npm install *)",
+      "Bash(npm view *)",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const v=JSON.parse\\(s\\).filter\\(x=>/^15\\\\.[0-9]+\\\\.[0-9]+$/.test\\(x\\)\\);console.log\\(v.slice\\(-25\\).join\\(' '\\)\\)}\\)\")",
+      "Bash(npm audit *)",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const a=JSON.parse\\(s\\);for\\(const [k,v] of Object.entries\\(a.vulnerabilities\\)\\){if\\(!v.isDirect && v.severity!=='critical' && v.severity!=='high'\\) continue;console.log\\(v.severity.padEnd\\(9\\), k.padEnd\\(22\\), 'direct='+v.isDirect, 'fix='+\\(v.fixAvailable? \\(typeof v.fixAvailable==='object'? v.fixAvailable.name+'@'+v.fixAvailable.version : 'yes'\\):'NONE'\\), '<-', \\(v.effects||[]\\).slice\\(0,3\\).join\\(','\\)\\)}}\\)\")",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const a=JSON.parse\\(s\\);for\\(const n of ['next','sharp','playwright']\\){const v=a.vulnerabilities[n];console.log\\('###',n\\);for\\(const x of v.via\\){if\\(typeof x==='object'\\)console.log\\('   ',x.severity,'|',x.title,'|range:',x.range\\)}}}\\)\")",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const v=JSON.parse\\(s\\).vulnerabilities.postcss;console.log\\(JSON.stringify\\(v.via,null,1\\)\\)}\\)\")",
+      "Bash(npm ls *)",
+      "Bash(npm uninstall *)",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const a=JSON.parse\\(s\\);for\\(const [k,v] of Object.entries\\(a.vulnerabilities\\)\\)console.log\\(v.severity,k,'direct='+v.isDirect,'fix='+\\(typeof v.fixAvailable==='object'?v.fixAvailable.name+'@'+v.fixAvailable.version:v.fixAvailable\\),'|',\\(v.via.filter\\(x=>typeof x==='object'\\).map\\(x=>x.title\\)[0]||v.via.join\\(','\\)\\)\\)}\\)\")"
+    ]
+  }
+}

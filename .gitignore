@@ -1,0 +1,41 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next
+.next/
+out/
+build/
+next-env.d.ts
+
+# production artifacts
+/storage/
+/.render-tmp/
+/remotion-bundle/
+
+# env
+.env
+.env.example
+.env.local
+.env*.local
+
+# database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+prisma/dev.db*
+
+# misc
+.DS_Store
+*.pem
+.vercel
+*.tsbuildinfo
+.idea/
+.vscode/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+coverage/
