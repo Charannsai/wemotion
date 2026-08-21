@@ -14,7 +14,10 @@ const globalForGroq = global as unknown as { groq: Groq };
 export const groq =
   globalForGroq.groq ||
   (env.GROQ_API_KEY
-    ? new Groq({ apiKey: env.GROQ_API_KEY })
+    ? new Groq({ 
+        apiKey: env.GROQ_API_KEY,
+        baseURL: env.GROQ_BASE_URL
+      })
     : (null as unknown as Groq)); // Fallback planner handles this
 
 if (process.env.NODE_ENV !== 'production' && groq) {
@@ -27,3 +30,4 @@ export const getGroqClient = () => {
   }
   return groq;
 };
+

@@ -86,8 +86,9 @@ const schema = z.object({
   CAPTURE_DEVICE_SCALE: float(2),
 
   GROQ_API_KEY: z.string().min(1, 'Groq API key is required'),
-  GROQ_PLANNER_MODEL: z.string().default('llama-3.3-70b-versatile'),
-  GROQ_EXTRACTION_MODEL: z.string().default('llama-3.1-8b-instant'),
+  GROQ_BASE_URL: z.string().optional(),
+  GROQ_PLANNER_MODEL: z.string().default('openai/gpt-oss-120b'),
+  GROQ_EXTRACTION_MODEL: z.string().default('openai/gpt-oss-120b'),
   AI_MAX_OUTPUT_TOKENS: int(8192),
   AI_MAX_RETRIES: int(3),
   AI_REQUEST_TIMEOUT_MS: int(180_000),
@@ -161,7 +162,7 @@ export function config(): ServerConfig {
     if (cfg.isProduction) {
       throw new Error(
         'AUTH_SECRET is required in production. Generate one with:\n' +
-          '  node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64url\'))"',
+        '  node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64url\'))"',
       );
     }
     cfg.AUTH_SECRET = `dev-insecure-auth-secret::${cfg.DATABASE_URL}`;

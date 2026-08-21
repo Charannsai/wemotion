@@ -24,16 +24,20 @@ export async function generateDocumentPlan(
       { role: 'system', content: PLANNER_SYSTEM_PROMPT },
       { role: 'user', content: userPrompt }
     ],
-    // Force structured JSON output
-    response_format: { type: 'json_object' },
     temperature: 0.7,
-    max_tokens: 8000,
+    max_tokens: 7000,
   });
 
-  const rawJson = completion.choices[0]?.message?.content;
+  let rawJson = completion.choices[0]?.message?.content;
   if (!rawJson) {
     throw new Error('LLM returned empty content.');
   }
+
+  // Strip <think> blocks if a reasoning model is used
+  rawJson = rawJson.replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim();
+
+  // Strip markdown formatting if the model wrapped it
+  rawJson = rawJson.replace(/```(?:json)?\s*/g, '').replace(/```\s*$/g, '').trim();
 
   try {
     const parsed = JSON.parse(rawJson);

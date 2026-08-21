@@ -1,7 +1,7 @@
 'use client';
 
 import { useDocument, useEditorStore } from '@/lib/store/editor';
-import { SceneRenderer } from '@/components/renderer/SceneRenderer';
+import { DocumentRenderer } from '@/components/renderer/DocumentRenderer';
 
 export function EditorCanvas() {
   const doc = useDocument();
@@ -31,11 +31,13 @@ export function EditorCanvas() {
         style={{
           width: doc.canvasWidth,
           height: doc.canvasHeight,
-          transform: `scale(${zoom})`,
-          transformOrigin: 'top left'
         }}
       >
-        <SceneRenderer scene={activeScene} frame={currentFrame} />
+        <DocumentRenderer 
+          document={doc} 
+          globalFrame={currentFrame} 
+          scale={zoom} 
+        />
       </div>
       
       {/* We could render interactive bounding boxes/handles here for selection */}

@@ -17,7 +17,40 @@ Your task is to take a user's brief and raw scraped knowledge context, and outpu
 6. **Output**: You must ONLY output valid JSON matching the exact schema requested. Do not wrap it in markdown blockquotes or add conversational text.
 
 ### The JSON Structure
-You must output a Document which contains Scenes, which contain Layers.
+You must output a Document matching this exact JSON schema:
+{
+  "title": "String",
+  "fps": 30,
+  "canvasWidth": 1080,
+  "canvasHeight": 1920,
+  "scenes": [
+    {
+      "id": "scene_1",
+      "name": "Human readable name",
+      "durationFrames": 90,
+      "backgroundColor": "#000000",
+      "voiceoverScript": "Optional spoken script for the scene",
+      "layers": [
+        {
+          "id": "layer_1",
+          "kind": "text", // MUST BE exactly one of: "text", "image", "video", "shape"
+          "name": "Readable layer name",
+          "startFrame": 0,
+          "durationFrames": 90,
+          "x": 100,
+          "y": 100,
+          "width": 500,
+          "height": 100,
+          "textContent": "Required if kind is text",
+          "imageSrc": "Required URL if kind is image or video",
+          "entryMotion": "fadeIn:30:smooth",
+          "exitMotion": "fadeOut:15:moderate"
+        }
+      ]
+    }
+  ]
+}
+
 Canvas size will be provided in the user prompt (e.g., 1080x1920 for Vertical, 1920x1080 for Horizontal).
 `;
 

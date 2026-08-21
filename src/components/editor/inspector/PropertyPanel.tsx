@@ -1,7 +1,7 @@
 'use client';
 
 import { useDocument, useEditorStore } from '@/lib/store/editor';
-import { mutateLayer } from '@/lib/operations/mutations';
+import { op } from '@/lib/operations/types';
 
 export function PropertyPanel() {
   const doc = useDocument();
@@ -21,15 +21,19 @@ export function PropertyPanel() {
   }
 
   const updateTransform = (key: 'x' | 'y' | 'scaleX' | 'scaleY' | 'rotation', val: number) => {
-    dispatch(mutateLayer(activeLayer.id, {
-      transform: { ...activeLayer.transform, [key]: val }
+    dispatch(op('updateLayer', {
+      sceneId: activeScene.id,
+      layerId: activeLayer.id,
+      updates: { transform: { ...activeLayer.transform, [key]: val } }
     }), `Update ${key}`);
   };
 
   const updateText = (content: string) => {
     if (activeLayer.kind !== 'text' || !activeLayer.text) return;
-    dispatch(mutateLayer(activeLayer.id, {
-      text: { ...activeLayer.text, content }
+    dispatch(op('updateLayer', {
+      sceneId: activeScene.id,
+      layerId: activeLayer.id,
+      updates: { text: { ...activeLayer.text, content } }
     }), 'Update text content');
   };
 
