@@ -1,6 +1,3 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
 export default async function DashboardLayout({
@@ -8,18 +5,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    // Basic protection, usually handled by middleware but we enforce here too
-    redirect('/api/auth/signin');
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 shrink-0 sticky top-0 z-10">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold tracking-tighter">
+          <div className="w-8 h-8 rounded bg-gradient-to-br from-zinc-500 to-zinc-600 flex items-center justify-center text-white font-bold tracking-tighter">
             We
           </div>
           <span className="font-semibold text-lg tracking-tight">WeMotion</span>
@@ -33,10 +23,10 @@ export default async function DashboardLayout({
         
         <div className="flex items-center gap-3">
           <div className="text-sm text-slate-500 hidden sm:block">
-            {session?.user?.name || 'Dev User'}
+            Admin
           </div>
-          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-medium">
-            {session?.user?.name?.charAt(0) || 'D'}
+          <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-700 font-medium">
+            A
           </div>
         </div>
       </header>

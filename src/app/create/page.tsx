@@ -95,12 +95,11 @@ export default function CreateFlowPage() {
             <Select 
               value={format} 
               onChange={(e) => setFormat(e.target.value)}
-              options={[
-                { value: 'vertical', label: 'Vertical (9:16) - TikTok, Reels, Shorts' },
-                { value: 'horizontal', label: 'Horizontal (16:9) - YouTube, Web' },
-                { value: 'square', label: 'Square (1:1) - Instagram Post' },
-              ]}
-            />
+            >
+              <option value="vertical">Vertical (9:16) - TikTok, Reels, Shorts</option>
+              <option value="horizontal">Horizontal (16:9) - YouTube, Web</option>
+              <option value="square">Square (1:1) - Instagram Post</option>
+            </Select>
           </div>
 
         </div>

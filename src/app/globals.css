@@ -17,34 +17,34 @@
 
 /* ── Theme tokens (light) ─────────────────────────────────────────────────── */
 @theme {
-  /* Brand accent (violet) */
-  --color-brand-50: #f3f0ff;
-  --color-brand-100: #e5dbff;
-  --color-brand-200: #d0bfff;
-  --color-brand-300: #b197fc;
-  --color-brand-400: #9775fa;
-  --color-brand-500: #845ef7;
-  --color-brand-600: #7950f2;
-  --color-brand-700: #7048e8;
-  --color-brand-800: #6741d9;
-  --color-brand-900: #5f3dc4;
+  /* Brand accent (Monochrome) */
+  --color-brand-50: #fafafa;
+  --color-brand-100: #f4f4f5;
+  --color-brand-200: #e4e4e7;
+  --color-brand-300: #d4d4d8;
+  --color-brand-400: #a1a1aa;
+  --color-brand-500: #71717a;
+  --color-brand-600: #52525b;
+  --color-brand-700: #3f3f46;
+  --color-brand-800: #27272a;
+  --color-brand-900: #18181b;
 
   /* Neutrals */
   --color-neutral-0: #ffffff;
-  --color-neutral-50: #f8f9fa;
-  --color-neutral-100: #f1f3f5;
-  --color-neutral-150: #e9ecef;
-  --color-neutral-200: #dee2e6;
-  --color-neutral-300: #ced4da;
-  --color-neutral-400: #adb5bd;
-  --color-neutral-500: #868e96;
-  --color-neutral-600: #6c757d;
-  --color-neutral-700: #495057;
-  --color-neutral-800: #343a40;
-  --color-neutral-850: #2b2f33;
-  --color-neutral-900: #212529;
-  --color-neutral-925: #1a1d21;
-  --color-neutral-950: #121416;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-150: #ececcc;
+  --color-neutral-200: #e4e4e7;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-500: #71717a;
+  --color-neutral-600: #52525b;
+  --color-neutral-700: #3f3f46;
+  --color-neutral-800: #27272a;
+  --color-neutral-850: #1f1f22;
+  --color-neutral-900: #18181b;
+  --color-neutral-925: #111113;
+  --color-neutral-950: #09090b;
 
   /* Success */
   --color-success-500: #51cf66;
@@ -67,7 +67,7 @@
   --color-info-700: #1c7ed6;
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
 
   /* Radii */
@@ -108,17 +108,17 @@
   --wm-border: var(--color-neutral-200);
   --wm-border-subtle: var(--color-neutral-150);
 
-  --wm-accent: var(--color-brand-600);
-  --wm-accent-hover: var(--color-brand-700);
-  --wm-accent-subtle: var(--color-brand-50);
-  --wm-accent-muted: var(--color-brand-100);
+  --wm-accent: var(--color-brand-900);
+  --wm-accent-hover: var(--color-brand-800);
+  --wm-accent-subtle: var(--color-brand-100);
+  --wm-accent-muted: var(--color-brand-200);
 
   --wm-success: var(--color-success-600);
   --wm-warning: var(--color-warning-600);
   --wm-danger: var(--color-danger-600);
   --wm-info: var(--color-info-600);
 
-  --wm-ring: var(--color-brand-200);
+  --wm-ring: var(--color-brand-400);
   --wm-overlay: rgba(0, 0, 0, 0.4);
 
   color-scheme: light;
@@ -140,12 +140,12 @@
   --wm-border: var(--color-neutral-800);
   --wm-border-subtle: var(--color-neutral-850);
 
-  --wm-accent: var(--color-brand-500);
-  --wm-accent-hover: var(--color-brand-400);
-  --wm-accent-subtle: rgba(132, 94, 247, 0.1);
-  --wm-accent-muted: rgba(132, 94, 247, 0.2);
+  --wm-accent: var(--color-neutral-0);
+  --wm-accent-hover: var(--color-brand-100);
+  --wm-accent-subtle: rgba(255, 255, 255, 0.1);
+  --wm-accent-muted: rgba(255, 255, 255, 0.2);
 
-  --wm-ring: rgba(132, 94, 247, 0.35);
+  --wm-ring: rgba(255, 255, 255, 0.35);
   --wm-overlay: rgba(0, 0, 0, 0.6);
 
   color-scheme: dark;
@@ -199,13 +199,13 @@ body {
 
 /* Selection */
 ::selection {
-  background-color: var(--color-brand-200);
-  color: var(--color-neutral-900);
+  background-color: var(--color-brand-800);
+  color: var(--color-neutral-0);
 }
 
 .dark ::selection {
-  background-color: rgba(132, 94, 247, 0.3);
-  color: var(--color-neutral-100);
+  background-color: var(--color-brand-200);
+  color: var(--color-neutral-900);
 }
 
 /* ── Utility classes ──────────────────────────────────────────────────────── */

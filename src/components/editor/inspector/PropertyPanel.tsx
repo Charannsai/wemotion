@@ -84,8 +84,8 @@ export function PropertyPanel() {
       <div className="p-4 space-y-4">
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Motion</h3>
         <div className="text-sm text-slate-300">
-          <div>Entry: <span className="text-indigo-400">{activeLayer.entryMotion || 'None'}</span></div>
-          <div className="mt-1">Exit: <span className="text-indigo-400">{activeLayer.exitMotion || 'None'}</span></div>
+          <div>Entry: <span className="text-zinc-400">{activeLayer.entryMotion || 'None'}</span></div>
+          <div className="mt-1">Exit: <span className="text-zinc-400">{activeLayer.exitMotion || 'None'}</span></div>
         </div>
       </div>
     </div>

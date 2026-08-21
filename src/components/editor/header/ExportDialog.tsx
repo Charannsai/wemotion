@@ -44,7 +44,7 @@ export function ExportDialog({ projectId }: { projectId: string }) {
 
   return (
     <>
-      <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white" onClick={() => setOpen(true)}>
+      <Button size="sm" className="bg-zinc-600 hover:bg-zinc-700 text-white" onClick={() => setOpen(true)}>
         Export
       </Button>
 
@@ -65,7 +65,7 @@ export function ExportDialog({ projectId }: { projectId: string }) {
                 </div>
                 <div className="w-full h-2 bg-[var(--wm-bg-muted)] rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-indigo-500 transition-all duration-300 ease-out" 
+                    className="h-full bg-zinc-500 transition-all duration-300 ease-out" 
                     style={{ width: `${progress}%` }} 
                   />
                 </div>
@@ -83,7 +83,7 @@ export function ExportDialog({ projectId }: { projectId: string }) {
           <Button 
             onClick={handleExport} 
             disabled={rendering}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="bg-zinc-600 hover:bg-zinc-700 text-white"
           >
             Start Render
           </Button>

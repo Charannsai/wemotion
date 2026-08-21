@@ -28,7 +28,7 @@ export function AiAssistantBar() {
 
   return (
     <div className="bg-slate-900/95 backdrop-blur border border-slate-700 shadow-2xl rounded-2xl p-2 flex items-center gap-2">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 ml-1">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-500 to-zinc-500 flex items-center justify-center shrink-0 ml-1">
         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
@@ -46,7 +46,7 @@ export function AiAssistantBar() {
           type="submit" 
           size="sm" 
           disabled={!prompt.trim() || loading}
-          className="bg-indigo-600 hover:bg-indigo-700 rounded-xl"
+          className="bg-zinc-600 hover:bg-zinc-700 rounded-xl"
         >
           {loading ? 'Thinking...' : 'Apply'}
         </Button>

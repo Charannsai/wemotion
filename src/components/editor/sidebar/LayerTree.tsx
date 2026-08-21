@@ -29,7 +29,7 @@ export function LayerTree() {
               key={layer.id}
               onClick={(e) => selectLayer(layer.id, e.shiftKey || e.metaKey)}
               className={`w-full flex items-center px-2 py-1.5 rounded text-sm text-left transition-colors ${
-                isSelected ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800'
+                isSelected ? 'bg-zinc-600 text-white' : 'text-slate-300 hover:bg-slate-800'
               }`}
             >
               <div className="mr-2 opacity-50">

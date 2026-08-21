@@ -11,7 +11,7 @@ export interface ProjectCardProps {
 export function ProjectCard({ id, name, updatedAt, thumbnailUrl }: ProjectCardProps) {
   return (
     <Link href={`/editor/${id}`} className="group block">
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:border-indigo-200 group-hover:-translate-y-1">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:border-zinc-200 group-hover:-translate-y-1">
         <div className="aspect-video bg-slate-100 flex items-center justify-center relative overflow-hidden">
           {thumbnailUrl ? (
             <img src={thumbnailUrl} alt={name} className="w-full h-full object-cover" />

@@ -20,7 +20,7 @@ export function Timeline() {
       {/* Timeline Header / Controls */}
       <div className="h-12 border-b border-slate-800 flex items-center px-4 shrink-0 bg-slate-950">
         <div className="flex items-center gap-4">
-          <button className="text-white hover:text-indigo-400">
+          <button className="text-white hover:text-zinc-400">
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
           </button>
           
@@ -34,7 +34,7 @@ export function Timeline() {
             max={activeScene.durationFrames} 
             value={currentFrame}
             onChange={(e) => setFrame(Number(e.target.value))}
-            className="w-64 accent-indigo-500"
+            className="w-64 accent-zinc-500"
           />
         </div>
       </div>
@@ -59,7 +59,7 @@ export function Timeline() {
               <div className="flex-1 relative bg-slate-950">
                 {/* Layer block */}
                 <div 
-                  className="absolute top-1 bottom-1 bg-indigo-600/80 border border-indigo-400 rounded cursor-pointer hover:bg-indigo-500 transition-colors"
+                  className="absolute top-1 bottom-1 bg-zinc-600/80 border border-zinc-400 rounded cursor-pointer hover:bg-zinc-500 transition-colors"
                   style={{
                     left: `${(layer.startFrame / activeScene.durationFrames) * 100}%`,
                     width: `${(layer.durationFrames / activeScene.durationFrames) * 100}%`

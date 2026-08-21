@@ -8,16 +8,19 @@
 import { db } from '@/lib/db/client';
 import { newId, ID_PREFIXES } from '@/lib/ids';
 import { revalidatePath } from 'next/cache';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
 import type { Document } from '@/lib/scene-graph/schema';
 import { createDocument } from '@/lib/scene-graph/defaults';
 
 export async function createProject(name: string, description?: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) throw new Error('Unauthorized');
+  const userId = 'user-1';
   
-  const userId = (session.user as any).id;
+  // Ensure the default user exists
+  await db.user.upsert({
+    where: { id: userId },
+    update: {},
+    create: { id: userId, name: 'Admin', email: 'admin@wemotion.local' }
+  });
+
   const initialDocument = createDocument({ canvasWidth: 1080, canvasHeight: 1920 });
 
   const project = await db.project.create({
@@ -51,10 +54,7 @@ export async function createProject(name: string, description?: string) {
 }
 
 export async function getProjects() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return [];
-  
-  const userId = (session.user as any).id;
+  const userId = 'user-1';
   
   return await db.project.findMany({
     where: { ownerId: userId },
@@ -63,10 +63,7 @@ export async function getProjects() {
 }
 
 export async function getProject(id: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  
-  const userId = (session.user as any).id;
+  const userId = 'user-1';
   
   const project = await db.project.findUnique({
     where: { id },
@@ -82,10 +79,7 @@ export async function getProject(id: string) {
 }
 
 export async function saveProjectState(id: string, state: Document) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) throw new Error('Unauthorized');
-  
-  const userId = (session.user as any).id;
+  const userId = 'user-1';
   
   // Verify ownership
   const existing = await db.project.findUnique({ where: { id }, select: { ownerId: true } });

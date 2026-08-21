@@ -1,23 +1,18 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+
 import { enqueueJob } from '@/lib/queue/client';
 import { db } from '@/lib/db/client';
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    // Removed auth check for public access
     const { projectId } = await req.json();
 
     if (!projectId) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    const userId = (session.user as any).id;
+    const userId = 'user-1';
     
     // Verify ownership
     const project = await db.project.findUnique({ where: { id: projectId } });
