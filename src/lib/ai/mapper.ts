@@ -50,8 +50,8 @@ export function mapAiPlanToDocument(plan: AiDocumentPlanSchema): Document {
             startFrame: layerPlan.startFrame || 0,
             durationFrames: layerPlan.durationFrames || 90,
             tracks: [],
-            entryMotion: layerPlan.entryMotion || 'none',
-            exitMotion: layerPlan.exitMotion || 'none',
+            entryMotion: layerPlan.entryMotion,
+            exitMotion: layerPlan.exitMotion,
           };
 
           if (layerPlan.kind === 'text') {
@@ -82,6 +82,37 @@ export function mapAiPlanToDocument(plan: AiDocumentPlanSchema): Document {
               sides: 6
             };
             layer.fill = { color: scenePlan.backgroundColor === '#ffffff' ? '#18181b' : '#fafafa', opacity: 1 };
+          } else if (layerPlan.kind === 'cursor') {
+            layer.cursor = {
+              cursorStyle: 'default',
+              clickAnimation: false,
+              targetX: layerPlan.targetX,
+              targetY: layerPlan.targetY
+            };
+            
+            // Auto-generate keyframe tracks to move the cursor from start (x,y) to target (targetX,targetY)
+            if (layerPlan.targetX !== undefined && layerPlan.targetY !== undefined) {
+              const moveDuration = Math.min(60, layerPlan.durationFrames - 10);
+              layer.tracks.push({
+                property: 'transform.x',
+                keyframes: [
+                  { frame: 0, value: layerPlan.x, easing: 'easeInOut' },
+                  { frame: moveDuration, value: layerPlan.targetX, easing: 'easeInOut' }
+                ]
+              });
+              layer.tracks.push({
+                property: 'transform.y',
+                keyframes: [
+                  { frame: 0, value: layerPlan.y, easing: 'easeInOut' },
+                  { frame: moveDuration, value: layerPlan.targetY, easing: 'easeInOut' }
+                ]
+              });
+            }
+          } else if (layerPlan.kind === 'browser') {
+            layer.browser = {
+              urlBarText: layerPlan.urlBarText || 'example.com',
+              theme: scenePlan.backgroundColor === '#ffffff' ? 'light' : 'dark'
+            };
           }
 
           return layer;

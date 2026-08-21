@@ -33,7 +33,10 @@ export async function POST(req: Request) {
           contextChunks.push(`Website Source Data from ${sourceUrl}:\n\n${content}`);
           
           if (pages[0].images && pages[0].images.length > 0) {
-            const topImages = pages[0].images.slice(0, 10).map(img => `[IMAGE]: URL: ${img.src} | Alt Text: ${img.alt || 'None'} | Importance Score: ${img.score.toFixed(2)}`);
+            const topImages = pages[0].images.slice(0, 5).map(img => {
+              const safeAlt = (img.alt || 'None').slice(0, 50);
+              return `[IMAGE]: URL: ${img.src} | Alt Text: ${safeAlt} | Importance Score: ${img.score.toFixed(2)}`;
+            });
             contextChunks.push(`Available Visual Assets from Website:\n${topImages.join('\n')}`);
           }
         }

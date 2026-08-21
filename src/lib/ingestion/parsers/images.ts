@@ -21,6 +21,9 @@ export function extractImagesFromHtml(html: string, baseUrl: string): ScrapedIma
     if (!srcMatch) continue;
     let src = srcMatch[1];
     
+    // Ignore base64 images (they blow up the LLM token limit)
+    if (src.startsWith('data:')) continue;
+    
     // Resolve absolute URL
     try {
       src = new URL(src, baseUrl).href;

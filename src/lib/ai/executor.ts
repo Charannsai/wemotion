@@ -25,7 +25,7 @@ export async function generateDocumentPlan(
       { role: 'user', content: userPrompt }
     ],
     temperature: 0.7,
-    max_tokens: 6000,
+    max_tokens: 5500,
   });
 
   let rawJson = completion.choices[0]?.message?.content;

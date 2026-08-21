@@ -28,8 +28,8 @@ export const aiLayerSchema = z.object({
   // Specific to browser layer
   urlBarText: z.string().optional().describe('For browser layers: text in the address bar'),
   
-  entryMotion: z.string().optional().default('none').describe('Entry animation preset, e.g. "popIn:30:energetic", "cursorClick:10:moderate", "springPop:20:energetic" or "none"'),
-  exitMotion: z.string().optional().default('none').describe('Exit animation preset, e.g. "slideUp:15:moderate" or "none"'),
+  entryMotion: z.string().optional().default('springPop:30:energetic').describe('Entry animation preset, e.g. "popIn:30:energetic", "cursorClick:10:moderate", "springPop:20:energetic" or "none"'),
+  exitMotion: z.string().optional().default('fadeOut:15:moderate').describe('Exit animation preset, e.g. "slideUp:15:moderate" or "none"'),
 });
 
 export const aiSceneSchema = z.object({
