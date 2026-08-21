@@ -18,7 +18,13 @@ export async function createProject(name: string, description?: string) {
   await db.user.upsert({
     where: { id: userId },
     update: {},
-    create: { id: userId, name: 'Admin', email: 'admin@wemotion.local' }
+    create: { 
+      id: userId, 
+      name: 'Admin', 
+      email: 'admin@wemotion.local',
+      emailNormal: 'admin@wemotion.local',
+      passwordHash: 'dummy'
+    }
   });
 
   const initialDocument = createDocument({ canvasWidth: 1080, canvasHeight: 1920 });
