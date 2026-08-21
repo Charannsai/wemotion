@@ -31,6 +31,11 @@ export async function POST(req: Request) {
             content = content.slice(0, maxChars) + '\n\n...[TRUNCATED FOR LENGTH]...';
           }
           contextChunks.push(`Website Source Data from ${sourceUrl}:\n\n${content}`);
+          
+          if (pages[0].images && pages[0].images.length > 0) {
+            const topImages = pages[0].images.slice(0, 10).map(img => `[IMAGE]: URL: ${img.src} | Alt Text: ${img.alt || 'None'} | Importance Score: ${img.score.toFixed(2)}`);
+            contextChunks.push(`Available Visual Assets from Website:\n${topImages.join('\n')}`);
+          }
         }
       } catch (err) {
         console.error('Failed to scrape with Firecrawl:', err);

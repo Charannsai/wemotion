@@ -5,6 +5,7 @@
  */
 import { config } from '@/lib/config';
 import type { ScrapedPage } from './types';
+import { extractImagesFromHtml } from './parsers/images';
 
 const env = config();
 
@@ -21,7 +22,7 @@ export async function scrapeWithFirecrawl(url: string): Promise<ScrapedPage[]> {
     },
     body: JSON.stringify({
       url,
-      formats: ['markdown'],
+      formats: ['markdown', 'html'],
     }),
   });
 
@@ -44,7 +45,7 @@ export async function scrapeWithFirecrawl(url: string): Promise<ScrapedPage[]> {
       title: page.metadata?.title || 'Untitled',
       description: page.metadata?.description || '',
       content: page.markdown || '',
-      images: [],
+      images: page.html ? extractImagesFromHtml(page.html, url) : [],
     }
   ];
 }
