@@ -15,18 +15,25 @@ export default function EditorLayout({ projectId, projectName }: { projectId: st
   if (doc.id === 'temp') return null;
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-300">
+    <div className="flex flex-col h-full" style={{ background: 'var(--wm-bg)', color: 'var(--wm-fg)' }}>
       <EditorHeader projectId={projectId} projectName={projectName} />
       
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar: Layers & Assets */}
-        <aside className="w-64 border-r border-slate-800 bg-slate-900 flex flex-col overflow-y-auto">
+        {/* Left Sidebar: Scenes & Layers */}
+        <aside
+          className="flex flex-col overflow-y-auto shrink-0"
+          style={{
+            width: 260,
+            background: 'var(--wm-bg)',
+            borderRight: '1px solid var(--wm-border)',
+          }}
+        >
           <LayerTree />
         </aside>
         
-        {/* Center: Canvas & Assistant */}
-        <main className="flex-1 flex flex-col relative min-w-0 bg-black">
-          <div className="flex-1 relative overflow-hidden flex items-center justify-center p-8">
+        {/* Center: Canvas + AI Assistant */}
+        <main className="flex-1 flex flex-col relative min-w-0" style={{ background: 'var(--wm-bg-subtle)' }}>
+          <div className="flex-1 relative overflow-hidden flex items-center justify-center">
             <EditorCanvas />
           </div>
           
@@ -36,13 +43,27 @@ export default function EditorLayout({ projectId, projectName }: { projectId: st
         </main>
         
         {/* Right Sidebar: Inspector */}
-        <aside className="w-80 border-l border-slate-800 bg-slate-900 overflow-y-auto">
+        <aside
+          className="overflow-y-auto shrink-0"
+          style={{
+            width: 300,
+            background: 'var(--wm-bg)',
+            borderLeft: '1px solid var(--wm-border)',
+          }}
+        >
           <PropertyPanel />
         </aside>
       </div>
       
       {/* Bottom: Timeline */}
-      <footer className="h-64 border-t border-slate-800 bg-slate-900 shrink-0">
+      <footer
+        className="shrink-0"
+        style={{
+          height: 240,
+          background: 'var(--wm-bg)',
+          borderTop: '1px solid var(--wm-border)',
+        }}
+      >
         <Timeline />
       </footer>
     </div>
