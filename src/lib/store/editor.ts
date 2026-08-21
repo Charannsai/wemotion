@@ -41,7 +41,7 @@ interface EditorState extends EditorUiState {
 export const useEditorStore = create<EditorState>((set, get) => ({
   // Initial empty state (will be replaced by init())
   history: createHistory({
-    id: 'temp', scenes: [], fps: 30, canvasWidth: 1920, canvasHeight: 1080
+    version: 1, scenes: [], fps: 30, canvasWidth: 1920, canvasHeight: 1080, meta: {}
   }),
   
   selectedSceneId: null,

@@ -11,8 +11,8 @@ import { AiAssistantBar } from './ai/AiAssistantBar';
 export default function EditorLayout({ projectId, projectName }: { projectId: string, projectName: string }) {
   const doc = useDocument();
 
-  // If store hasn't initialized yet
-  if (doc.id === 'temp') return null;
+  // If store hasn't initialized with a real document yet
+  if (!doc || !doc.scenes) return null;
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--wm-bg)', color: 'var(--wm-fg)' }}>

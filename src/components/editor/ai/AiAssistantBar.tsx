@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 import { useEditorStore } from '@/lib/store/editor';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 
 export function AiAssistantBar() {
   const [prompt, setPrompt] = useState('');
@@ -15,10 +13,8 @@ export function AiAssistantBar() {
     if (!prompt.trim()) return;
 
     setLoading(true);
-    // In a real app, this would hit an API endpoint that uses the QA rules
-    // or the deterministic planner to return an Operation that modifies the document.
-    
-    // Simulate AI thinking and doing nothing for the scaffolding
+    // In a real app, this hits an API endpoint that uses the QA rules
+    // or the deterministic planner to return an Operation[] that modifies the document.
     await new Promise(r => setTimeout(r, 1000));
     console.log('AI would process:', prompt);
     
@@ -27,29 +23,45 @@ export function AiAssistantBar() {
   };
 
   return (
-    <div className="bg-slate-900/95 backdrop-blur border border-slate-700 shadow-2xl rounded-2xl p-2 flex items-center gap-2">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-500 to-zinc-500 flex items-center justify-center shrink-0 ml-1">
-        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      </div>
-      
-      <form onSubmit={handleSubmit} className="flex-1 flex items-center gap-2">
-        <Input 
+    <div
+      className="rounded-xl shadow-lg overflow-hidden"
+      style={{
+        background: 'var(--wm-bg)',
+        border: '1px solid var(--wm-border)',
+      }}
+    >
+      <form onSubmit={handleSubmit} className="flex items-center gap-2 px-3 py-2">
+        {/* AI Icon */}
+        <div
+          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+          style={{ background: 'var(--wm-accent)', color: 'var(--wm-fg-on-accent)' }}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+
+        {/* Input */}
+        <input
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Ask AI to change colors, fix safe zones, or add animations..." 
-          className="border-none bg-transparent focus-visible:ring-0 text-white placeholder:text-slate-500"
+          placeholder="Ask AI to edit — e.g. &quot;Make the title larger&quot;, &quot;Add fade transition&quot;…"
+          className="flex-1 bg-transparent text-xs outline-none"
+          style={{ color: 'var(--wm-fg)' }}
         />
-        
-        <Button 
-          type="submit" 
-          size="sm" 
+
+        {/* Submit */}
+        <button
+          type="submit"
           disabled={!prompt.trim() || loading}
-          className="bg-zinc-600 hover:bg-zinc-700 rounded-xl"
+          className="px-3 py-1.5 rounded-md text-xs font-medium transition-all disabled:opacity-40"
+          style={{
+            background: prompt.trim() ? 'var(--wm-accent)' : 'var(--wm-bg-muted)',
+            color: prompt.trim() ? 'var(--wm-fg-on-accent)' : 'var(--wm-fg-muted)',
+          }}
         >
-          {loading ? 'Thinking...' : 'Apply'}
-        </Button>
+          {loading ? 'Thinking…' : 'Apply'}
+        </button>
       </form>
     </div>
   );

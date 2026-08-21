@@ -11,6 +11,9 @@ export function ExportDialog({ projectId }: { projectId: string }) {
   const [rendering, setRendering] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  const totalFrames = doc.scenes.reduce((s, sc) => s + sc.durationFrames, 0);
+  const duration = (totalFrames / doc.fps).toFixed(1);
+
   const handleExport = async () => {
     setRendering(true);
     setProgress(0);
@@ -23,18 +26,16 @@ export function ExportDialog({ projectId }: { projectId: string }) {
       
       if (!res.ok) throw new Error('Render failed to start');
       
-      const { jobId } = await res.json();
-      
       // Simulate progress polling
       let p = 0;
       const interval = setInterval(() => {
-        p += 10;
-        setProgress(p);
+        p += 8;
+        setProgress(Math.min(p, 100));
         if (p >= 100) {
           clearInterval(interval);
           setRendering(false);
         }
-      }, 500);
+      }, 400);
 
     } catch (err) {
       console.error(err);
@@ -44,7 +45,7 @@ export function ExportDialog({ projectId }: { projectId: string }) {
 
   return (
     <>
-      <Button size="sm" className="bg-zinc-600 hover:bg-zinc-700 text-white" onClick={() => setOpen(true)}>
+      <Button size="sm" onClick={() => setOpen(true)}>
         Export
       </Button>
 
@@ -52,39 +53,43 @@ export function ExportDialog({ projectId }: { projectId: string }) {
         <DialogHeader onClose={() => setOpen(false)}>Export Video</DialogHeader>
         
         <DialogBody>
-          <div className="text-sm text-[var(--wm-fg-muted)] mb-6">
-            Render your {doc.canvasWidth}x{doc.canvasHeight} composition at {doc.fps} FPS to MP4.
+          {/* Specs summary */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            {[
+              { label: 'Resolution', value: `${doc.canvasWidth}×${doc.canvasHeight}` },
+              { label: 'Frame Rate', value: `${doc.fps} fps` },
+              { label: 'Duration', value: `${duration}s` },
+            ].map(item => (
+              <div key={item.label} className="text-center p-2 rounded-md" style={{ background: 'var(--wm-bg-subtle)' }}>
+                <div className="text-[10px] font-medium mb-0.5" style={{ color: 'var(--wm-fg-subtle)' }}>{item.label}</div>
+                <div className="text-xs font-semibold" style={{ color: 'var(--wm-fg)', fontVariantNumeric: 'tabular-nums' }}>{item.value}</div>
+              </div>
+            ))}
           </div>
 
-          <div className="flex flex-col items-center">
-            {rendering ? (
-              <div className="w-full space-y-2">
-                <div className="flex justify-between text-sm font-medium text-[var(--wm-fg)]">
-                  <span>Rendering...</span>
-                  <span>{progress}%</span>
-                </div>
-                <div className="w-full h-2 bg-[var(--wm-bg-muted)] rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-zinc-500 transition-all duration-300 ease-out" 
-                    style={{ width: `${progress}%` }} 
-                  />
-                </div>
+          {rendering ? (
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-medium">
+                <span style={{ color: 'var(--wm-fg)' }}>Rendering…</span>
+                <span style={{ color: 'var(--wm-fg-muted)', fontVariantNumeric: 'tabular-nums' }}>{progress}%</span>
               </div>
-            ) : (
-              <div className="text-center text-[var(--wm-fg-subtle)] text-sm">
-                Rendering uses 1 credit. You have 50 credits remaining.
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--wm-bg-muted)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%`, background: 'var(--wm-accent)' }}
+                />
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <p className="text-xs text-center" style={{ color: 'var(--wm-fg-subtle)' }}>
+              Output format: MP4 (H.264). Rendering uses 1 credit.
+            </p>
+          )}
         </DialogBody>
         
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={rendering}>Cancel</Button>
-          <Button 
-            onClick={handleExport} 
-            disabled={rendering}
-            className="bg-zinc-600 hover:bg-zinc-700 text-white"
-          >
+          <Button onClick={handleExport} disabled={rendering}>
             Start Render
           </Button>
         </DialogFooter>
