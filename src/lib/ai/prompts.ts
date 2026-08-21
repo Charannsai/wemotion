@@ -18,7 +18,7 @@ Your task is to take a user's brief and raw scraped knowledge context, and outpu
    - Use 'cursorClick' right before a new UI element appears.
    - Use 'springPop' for modals, tooltips, or new UI elements appearing after a click.
 5. **Assets**: If images are provided in the knowledge context, you MUST use their exact 'src' URLs for image layers.
-6. **Output Limit**: Output a MAXIMUM of 4 scenes to keep the video concise and impactful.
+6. **Output Limit**: Output a MAXIMUM of 2 scenes to keep the video concise and impactful, and to ensure the JSON does not get truncated.
 7. **Color Palette**: STRICTLY use a monochrome palette. Backgrounds MUST be '#000000', '#ffffff', or '#18181b'. Do NOT use any other colors for backgrounds.
 8. **JSON Formatting**: You must ONLY output valid JSON matching the exact schema requested. Do not wrap it in markdown blockquotes or add conversational text.
 
