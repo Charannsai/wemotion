@@ -12,7 +12,7 @@ export default async function DashboardLayout({
 
   if (!session?.user) {
     // Basic protection, usually handled by middleware but we enforce here too
-    // redirect('/api/auth/signin');
+    redirect('/api/auth/signin');
   }
 
   return (

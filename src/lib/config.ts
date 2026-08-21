@@ -86,7 +86,7 @@ const schema = z.object({
   CAPTURE_DEVICE_SCALE: float(2),
 
   GROQ_API_KEY: z.string().min(1, 'Groq API key is required'),
-  GROQ_PLANNER_MODEL: z.string().default('llama-3.1-70b-versatile'),
+  GROQ_PLANNER_MODEL: z.string().default('llama-3.3-70b-versatile'),
   GROQ_EXTRACTION_MODEL: z.string().default('llama-3.1-8b-instant'),
   AI_MAX_OUTPUT_TOKENS: int(8192),
   AI_MAX_RETRIES: int(3),

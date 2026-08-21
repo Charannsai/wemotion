@@ -25,8 +25,24 @@ export async function createProject(name: string, description?: string) {
       id: newId(ID_PREFIXES.project),
       name,
       description,
-      ownerId: userId,
-      state: JSON.stringify(initialDocument), // Store standard document model
+      owner: { connect: { id: userId } },
+      workspace: {
+        connectOrCreate: {
+          where: { id: 'ws-default' },
+          create: {
+            id: 'ws-default',
+            name: 'Default Workspace',
+            slug: 'default-workspace'
+          }
+        }
+      },
+      document: {
+        create: {
+          docJson: JSON.stringify(initialDocument),
+          docHash: 'init',
+          docBytes: JSON.stringify(initialDocument).length
+        }
+      }
     }
   });
 
@@ -53,14 +69,15 @@ export async function getProject(id: string) {
   const userId = (session.user as any).id;
   
   const project = await db.project.findUnique({
-    where: { id }
+    where: { id },
+    include: { document: true }
   });
 
   if (!project || project.ownerId !== userId) return null;
 
   return {
     ...project,
-    state: JSON.parse(project.state) as Document
+    state: project.document ? JSON.parse(project.document.docJson) as Document : null
   };
 }
 
@@ -74,9 +91,21 @@ export async function saveProjectState(id: string, state: Document) {
   const existing = await db.project.findUnique({ where: { id }, select: { ownerId: true } });
   if (existing?.ownerId !== userId) throw new Error('Forbidden');
 
-  await db.project.update({
-    where: { id },
-    data: { state: JSON.stringify(state) }
+  const docJson = JSON.stringify(state);
+
+  await db.projectDocument.upsert({
+    where: { projectId: id },
+    update: { 
+      docJson,
+      docHash: 'updated',
+      docBytes: docJson.length
+    },
+    create: {
+      projectId: id,
+      docJson,
+      docHash: 'updated',
+      docBytes: docJson.length
+    }
   });
 
   return { success: true };

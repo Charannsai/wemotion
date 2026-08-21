@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useDocument } from '@/lib/store/editor';
 
@@ -33,7 +33,6 @@ export function ExportDialog({ projectId }: { projectId: string }) {
         if (p >= 100) {
           clearInterval(interval);
           setRendering(false);
-          // show download link or success toast
         }
       }, 500);
 
@@ -44,52 +43,52 @@ export function ExportDialog({ projectId }: { projectId: string }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
-          Export
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Export Video</DialogTitle>
-          <DialogDescription>
+    <>
+      <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white" onClick={() => setOpen(true)}>
+        Export
+      </Button>
+
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogHeader onClose={() => setOpen(false)}>Export Video</DialogHeader>
+        
+        <DialogBody>
+          <div className="text-sm text-[var(--wm-fg-muted)] mb-6">
             Render your {doc.canvasWidth}x{doc.canvasHeight} composition at {doc.fps} FPS to MP4.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="py-6 flex flex-col items-center">
-          {rendering ? (
-            <div className="w-full space-y-2">
-              <div className="flex justify-between text-sm font-medium">
-                <span>Rendering...</span>
-                <span>{progress}%</span>
+          </div>
+
+          <div className="flex flex-col items-center">
+            {rendering ? (
+              <div className="w-full space-y-2">
+                <div className="flex justify-between text-sm font-medium text-[var(--wm-fg)]">
+                  <span>Rendering...</span>
+                  <span>{progress}%</span>
+                </div>
+                <div className="w-full h-2 bg-[var(--wm-bg-muted)] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-500 transition-all duration-300 ease-out" 
+                    style={{ width: `${progress}%` }} 
+                  />
+                </div>
               </div>
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-indigo-500 transition-all duration-300 ease-out" 
-                  style={{ width: `${progress}%` }} 
-                />
+            ) : (
+              <div className="text-center text-[var(--wm-fg-subtle)] text-sm">
+                Rendering uses 1 credit. You have 50 credits remaining.
               </div>
-            </div>
-          ) : (
-            <div className="text-center text-slate-500 text-sm">
-              Rendering uses 1 credit. You have 50 credits remaining.
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </DialogBody>
         
-        <div className="flex justify-end gap-3">
+        <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={rendering}>Cancel</Button>
           <Button 
             onClick={handleExport} 
             disabled={rendering}
-            className="bg-indigo-600 hover:bg-indigo-700"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white"
           >
             Start Render
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogFooter>
+      </Dialog>
+    </>
   );
 }

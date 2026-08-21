@@ -32,10 +32,22 @@ export async function POST(req: Request) {
       documentPlan = generateDeterministicPlan(brief, targetFormat);
     }
 
+    const docJson = JSON.stringify(documentPlan);
+
     // Save generated plan as the new state for the project
-    await db.project.update({
-      where: { id: projectId },
-      data: { state: JSON.stringify(documentPlan) }
+    await db.projectDocument.upsert({
+      where: { projectId },
+      update: { 
+        docJson,
+        docHash: 'generated',
+        docBytes: docJson.length
+      },
+      create: {
+        projectId,
+        docJson,
+        docHash: 'generated',
+        docBytes: docJson.length
+      }
     });
 
     return NextResponse.json({ success: true, plan: documentPlan });
