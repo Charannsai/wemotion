@@ -63,7 +63,7 @@ export function mapAiPlanToDocument(plan: AiDocumentPlanSchema): Document {
                 fontWeight: 400,
                 lineHeight: 1.4,
                 letterSpacing: 0,
-                color: '#ffffff',
+                color: scenePlan.backgroundColor === '#ffffff' ? '#000000' : '#ffffff',
                 align: 'center',
                 italic: false,
                 underline: false,
@@ -81,7 +81,7 @@ export function mapAiPlanToDocument(plan: AiDocumentPlanSchema): Document {
               shapeType: 'rectangle',
               sides: 6
             };
-            layer.fill = { color: '#333333', opacity: 1 };
+            layer.fill = { color: scenePlan.backgroundColor === '#ffffff' ? '#18181b' : '#fafafa', opacity: 1 };
           }
 
           return layer;

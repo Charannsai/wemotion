@@ -13,7 +13,7 @@ export default async function EditorPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-slate-950 text-slate-200">
-      <EditorInitializer document={project.state} />
+      <EditorInitializer key={project.id} document={project.state} />
       <EditorLayout projectId={project.id} projectName={project.name} />
     </div>
   );

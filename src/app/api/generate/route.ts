@@ -24,7 +24,13 @@ export async function POST(req: Request) {
       try {
         const pages = await scrapeWithFirecrawl(sourceUrl);
         if (pages.length > 0) {
-          contextChunks.push(`Website Source Data from ${sourceUrl}:\n\n${pages[0].content}`);
+          // Truncate to avoid blowing past Groq's 8000 TPM limit on free tiers
+          const maxChars = 2500;
+          let content = pages[0].content;
+          if (content.length > maxChars) {
+            content = content.slice(0, maxChars) + '\n\n...[TRUNCATED FOR LENGTH]...';
+          }
+          contextChunks.push(`Website Source Data from ${sourceUrl}:\n\n${content}`);
         }
       } catch (err) {
         console.error('Failed to scrape with Firecrawl:', err);

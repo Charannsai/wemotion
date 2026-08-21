@@ -46,9 +46,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   
   selectedSceneId: null,
   selectedLayerIds: [],
-  currentFrame: 0,
+  currentFrame: 30,
   isPlaying: false,
-  zoom: 1,
+  zoom: 0.5,
 
   dispatch: (ops, label = 'Update') => {
     const operations = Array.isArray(ops) ? ops : [ops];
